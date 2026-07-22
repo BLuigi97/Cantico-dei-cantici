@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cantico dei Cantici experience</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@300..900&display=swap" rel="stylesheet">
+
+<style>
+  /* ============ TOKEN MATERIAL 3 — palette oro/bronzo (auto chiaro/scuro) ============ */
+  :root{
+    --md-primary:             rgb(118 90 11);
+    --md-on-primary:          rgb(255 255 255);
+    --md-primary-container:   rgb(255 223 154);
+    --md-on-primary-container:rgb(90 67 0);
+    --md-surface:             rgb(255 248 242);
+    --md-surface-container:   rgb(246 237 223);
+    --md-on-surface:          rgb(31 27 19);
+    --md-on-surface-variant:  rgb(77 70 57);
+    --md-outline-variant:     rgb(208 197 180);
+    --md-shadow:              rgba(0,0,0,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --md-primary:             rgb(232 194 108);
+      --md-on-primary:          rgb(63 46 0);
+      --md-primary-container:   rgb(90 67 0);
+      --md-on-primary-container:rgb(255 223 154);
+      --md-surface:             rgb(23 19 11);
+      --md-surface-container:   rgb(35 31 23);
+      --md-on-surface:          rgb(235 225 212);
+      --md-on-surface-variant:  rgb(208 197 180);
+      --md-outline-variant:     rgb(77 70 57);
+      --md-shadow:              rgba(0,0,0,.45);
+    }
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  body{
+    min-height:100dvh;
+    display:grid;
+    place-items:center;
+    background:var(--md-surface);
+    font-family:"Google Sans Flex","Roboto Flex",system-ui,sans-serif;
+    color:var(--md-on-surface);
+    padding:24px;
+  }
+
+  /* ============ CARD ============ */
+  .player-card{
+    width:min(360px, 100%);
+    background:var(--md-surface-container);
+    border-radius:28px;
+    padding:20px 20px 28px;
+    box-shadow:0 4px 16px var(--md-shadow);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  /* Copertina 3:4 */
+  .cover{
+    width:100%;
+    aspect-ratio:3/4;
+    border-radius:24px;
+    overflow:hidden;
+    position:relative;
+    background:linear-gradient(150deg, var(--md-primary-container), var(--md-primary));
+    display:grid;
+    place-items:center;
+  }
+  .cover img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .cover .placeholder-icon{
+    width:72px; height:72px;
+    color:var(--md-on-primary-container);
+    opacity:.6;
+  }
+
+  /* Testi */
+  .meta{ width:100%; margin-top:20px; }
+  .title{
+    font-size:1.25rem;         /* title-large */
+    font-weight:600;
+    line-height:1.3;
+  }
+  .artist{
+    font-size:.875rem;         /* body-medium */
+    color:var(--md-on-surface-variant);
+    margin-top:2px;
+  }
+
+  /* ============ SLIDER ONDULATO ============ */
+  .slider-row{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:14px;
+  }
+  .time{
+    font-size:.75rem;          /* label-small */
+    font-weight:500;
+    color:var(--md-on-surface-variant);
+    font-variant-numeric:tabular-nums;
+    min-width:36px;
+  }
+  .time.total{ text-align:right; }
+
+  .slider{
+    flex:1;
+    height:48px;
+    cursor:pointer;
+    touch-action:none;
+    position:relative;
+  }
+  .slider:focus-visible{
+    outline:2px solid var(--md-primary);
+    outline-offset:4px;
+    border-radius:8px;
+  }
+  .slider svg{ display:block; width:100%; height:100%; }
+
+  .wave{
+    fill:none;
+    stroke:var(--md-primary);
+    stroke-width:4;
+    stroke-linecap:round;
+  }
+  .track-rest{
+    stroke:var(--md-outline-variant);
+    stroke-width:4;
+    stroke-linecap:round;
+  }
+  .stop-dot{ fill:var(--md-primary); }
+  .thumb{
+    fill:var(--md-primary);
+    transition:transform .15s ease;
+    transform-origin:center;
+    transform-box:fill-box;
+  }
+  .slider.dragging .thumb{ transform:scaleX(1.6); }
+
+  /* ============ PLAY / PAUSA ============ */
+  .controls{ margin-top:18px; }
+  .play-btn{
+    width:72px; height:72px;
+    border:none;
+    cursor:pointer;
+    background:var(--md-primary);
+    color:var(--md-on-primary);
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    transition:border-radius .35s cubic-bezier(.3,1.4,.5,1), transform .15s ease, background .3s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .play-btn:active{ transform:scale(.93); }
+  .play-btn:focus-visible{
+    outline:2px solid var(--md-primary);
+    outline-offset:3px;
+  }
+  .play-btn.playing{ border-radius:22px; }   /* morph cerchio → squircle */
+  .play-btn svg{ width:32px; height:32px; }
+  .play-btn .icon-pause{ display:none; }
+  .play-btn.playing .icon-play{ display:none; }
+  .play-btn.playing .icon-pause{ display:block; }
+
+  @media (prefers-reduced-motion: reduce){
+    .play-btn{ transition:none; }
+    .slider.dragging .thumb{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="player-card">
+
+  <!-- Copertina: sostituisci "cover.jpg" con la tua immagine (proporzione 3:4) -->
+  <div class="cover">
+    <svg class="placeholder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21s4.5-2.01 4.5-4.5V7h4V3h-7z"/>
+    </svg>
+    <img src="cover.jpg" alt="" onerror="this.remove()">
+  </div>
+
+  <div class="meta">
+    <div class="title">Il profumo del deserto</div>
+    <div class="artist">Nome artista</div>
+  </div>
+
+  <div class="slider-row">
+    <span class="time" id="timeCurrent">0:00</span>
+    <div class="slider" id="slider" role="slider" tabindex="0"
+         aria-label="Posizione di riproduzione"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <svg id="sliderSvg" preserveAspectRatio="none">
+        <path class="wave" id="wavePath" d=""/>
+        <line class="track-rest" id="trackRest" x1="0" y1="24" x2="0" y2="24"/>
+        <circle class="stop-dot" id="stopDot" r="2.5" cy="24"/>
+        <rect class="thumb" id="thumb" width="4" height="30" rx="2" y="9"/>
+      </svg>
+    </div>
+    <span class="time total" id="timeTotal">0:00</span>
+  </div>
+
+  <div class="controls">
+    <button class="play-btn" id="playBtn" aria-label="Riproduci">
+      <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+      <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M6 5h4v14H6zM14 5h4v14h-4z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Sostituisci "audio.mp3" con il tuo file audio -->
+  <audio id="audio" src="audio.mp3" preload="metadata"></audio>
+</div>
+
+<script>
+(function(){
+  const audio   = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const slider  = document.getElementById('slider');
+  const svg     = document.getElementById('sliderSvg');
+  const wave    = document.getElementById('wavePath');
+  const rest    = document.getElementById('trackRest');
+  const stopDot = document.getElementById('stopDot');
+  const thumb   = document.getElementById('thumb');
+  const tCur    = document.getElementById('timeCurrent');
+  const tTot    = document.getElementById('timeTotal');
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Stato ---
+  let progress = 0;          // 0..1
+  let playing  = false;
+  let dragging = false;
+
+  // --- Parametri onda (Material 3 Expressive) ---
+  const MID_Y      = 24;
+  const WAVELENGTH = 22;
+  const AMP_MAX    = 4.5;
+  const THUMB_GAP  = 7;
+  let amp   = 0;
+  let phase = 0;
+  let lastTs = 0;
+  let W = 0;
+
+  // Durata "sicura": finita e > 0, altrimenti 0 (slider resta a 0, ma il tempo scorre)
+  function safeDuration(){
+    const d = audio.duration;
+    return (isFinite(d) && d > 0) ? d : 0;
+  }
+  function fmt(s){
+    s = Math.max(0, Math.floor(s || 0));
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+  function updateTotal(){ tTot.textContent = fmt(safeDuration()); }
+
+  // --- Disegno slider ---
+  function buildWave(endX){
+    let d = 'M 0 ' + MID_Y;
+    if(endX < 1) return d;
+    for(let x = 0; x <= endX; x += 2){
+      const y = MID_Y + Math.sin((x / WAVELENGTH) * Math.PI * 2 - phase) * amp;
+      d += ' L ' + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    return d;
+  }
+  function drawSlider(){
+    // Legge la larghezza reale ogni volta: si adatta a resize e reflow senza ResizeObserver
+    const w = slider.clientWidth;
+    if(w && w !== W){
+      W = w;
+      svg.setAttribute('viewBox', '0 0 ' + W + ' 48');
+      stopDot.setAttribute('cx', W - 3);
+    }
+    if(!W) return;
+    const px = progress * W;
+    wave.setAttribute('d', buildWave(Math.max(0, px - THUMB_GAP)));
+    thumb.setAttribute('x', Math.min(W - 4, Math.max(0, px - 2)));
+    rest.setAttribute('x1', Math.min(W, px + THUMB_GAP));
+    rest.setAttribute('x2', W - 6);
+  }
+
+  // --- Aggiornamento diretto dagli eventi audio (funziona anche senza il ciclo grafico) ---
+  function syncFromAudio(){
+    const cur = audio.currentTime || 0;
+    const dur = safeDuration();
+    if(!dragging) progress = dur ? Math.min(1, cur / dur) : 0;
+    tCur.textContent = fmt(cur);
+    slider.setAttribute('aria-valuenow', Math.round(progress * 100));
+    drawSlider();
+  }
+
+  audio.addEventListener('loadedmetadata', updateTotal);
+  audio.addEventListener('durationchange', updateTotal);
+  audio.addEventListener('canplay',        updateTotal);
+  audio.addEventListener('timeupdate',     syncFromAudio);
+  audio.addEventListener('ended', () => setPlaying(false));
+
+  // --- Play / Pausa ---
+  function setPlaying(p){
+    playing = p;
+    playBtn.classList.toggle('playing', p);
+    playBtn.setAttribute('aria-label', p ? 'Pausa' : 'Riproduci');
+    if(p){
+      const pr = audio.play();
+      if(pr && pr.catch){ pr.catch(() => setPlaying(false)); }
+    } else {
+      audio.pause();
+    }
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+
+  // --- Seek (mouse/touch) ---
+  function seekFromEvent(e){
+    const rect = slider.getBoundingClientRect();
+    progress = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const dur = safeDuration();
+    if(dur){ audio.currentTime = progress * dur; }
+    tCur.textContent = fmt(audio.currentTime || 0);
+    drawSlider();
+  }
+  slider.addEventListener('pointerdown', e => {
+    dragging = true;
+    slider.classList.add('dragging');
+    slider.setPointerCapture(e.pointerId);
+    seekFromEvent(e);
+  });
+  slider.addEventListener('pointermove', e => { if(dragging) seekFromEvent(e); });
+  slider.addEventListener('pointerup',   () => { dragging = false; slider.classList.remove('dragging'); });
+
+  // --- Seek (tastiera) ---
+  slider.addEventListener('keydown', e => {
+    const dur = safeDuration();
+    if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      if(dur) audio.currentTime = Math.min(dur, Math.max(0, (audio.currentTime || 0) + dir * 5));
+    }
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); setPlaying(!playing); }
+  });
+
+  // --- Ciclo di animazione: serve solo a far "ondeggiare" l'onda in modo fluido ---
+  function frame(ts){
+    const dt = lastTs ? (ts - lastTs) / 1000 : 0;
+    lastTs = ts;
+
+    if(!dragging){
+      const dur = safeDuration();
+      if(dur) progress = Math.min(1, (audio.currentTime || 0) / dur);
+    }
+
+    const targetAmp = (playing && !reduceMotion) ? AMP_MAX : 0;
+    amp += (targetAmp - amp) * Math.min(1, dt * 8);
+    if(playing && !reduceMotion) phase += dt * 7;
+
+    drawSlider();
+    tCur.textContent = fmt(audio.currentTime || 0);
+    slider.setAttribute('aria-valuenow', Math.round(progress * 100));
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', drawSlider);
+  drawSlider();
+  updateTotal();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
